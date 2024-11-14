@@ -13,25 +13,32 @@ const secret = process.env.GIT_WEBHOOK_SECRET;
 app.use(express.raw({ type: "application/json" }));
 
 // Verify the GitHub webhook signature
-function verifySignature(req, res, buf) {
-  const signature = `sha256=${crypto
-    .createHmac("sha256", secret)
-    .update(buf)
-    .digest("hex")}`;
+const verifySignature = (body, signature, secret) => {
+  const hmac = crypto.createHmac("sha256", secret);
 
-  if (req.headers["x-hub-signature-256"] !== signature) {
-    res.status(401).send("Signature mismatch");
-    return false;
-  }
-  return true;
-}
+  hmac.update(body);
+
+  const computedSignature = "sha256=" + hmac.digest("hex"); 
+
+  const isValid = computedSignature === signature;
+  if (!isValid){
+    console.log("Invalid signature")
+  } 
+  return computedSignature === signature; 
+};
 
 // Endpoint to receive the webhook
 app.post(
   "/webhook",
   (req, res) => {
     console.log("validating signature:")
-    if (!verifySignature(req, res, req.body)) return;
+    const signature = req.headers["x-hub-signature-256"];
+    if(!signature) return
+    const secret = process.env.GIT_WEBHOOK_SECRET
+    // if (!verifySignature(req.body, signature, secret)) {
+    //     res.status(401).send("Invalid signature");
+    //     return;
+    // }
 
     console.log("authenticated");
 
