@@ -10,7 +10,7 @@ const port = process.env.PORT || 3000;
 const secret = process.env.GIT_WEBHOOK_SECRET;
 
 // Middleware to parse JSON payloads
-app.use(bodyParser.json());
+app.use(express.raw({ type: "application/json" }));
 
 // Verify the GitHub webhook signature
 function verifySignature(req, res, buf) {
@@ -29,7 +29,6 @@ function verifySignature(req, res, buf) {
 // Endpoint to receive the webhook
 app.post(
   "/webhook",
-  bodyParser.raw({ type: "application/json" }),
   (req, res) => {
     console.log("validating signature:")
     if (!verifySignature(req, res, req.body)) return;
